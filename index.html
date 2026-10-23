@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Explorador interactivo de países del mundo con Vue 3. Busca, filtra y descubre información detallada sobre cada país.">
+    <title>World Explorer — Países del Mundo</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- ================================
+             HEADER
+             ================================ -->
+        <header class="app-header">
+            <div class="header-icon">🌍</div>
+            <h1 class="app-title">World Explorer</h1>
+            <p class="app-subtitle">Descubre información detallada sobre los países del mundo</p>
+        </header>
+
+        <!-- ================================
+             ESTADÍSTICAS  (v-if para mostrar solo cuando hay datos)
+             ================================ -->
+        <section v-if="!loading && !error && countries.length > 0" class="stats-bar" id="stats-bar">
+            <div class="stat-item">
+                <span class="stat-value">{{ totalCountries }}</span>
+                <span class="stat-label">Países</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">{{ totalRegions }}</span>
+                <span class="stat-label">Regiones</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">{{ formattedPopulation }}</span>
+                <span class="stat-label">Población Total</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">{{ totalLanguages }}</span>
+                <span class="stat-label">Idiomas</span>
+            </div>
+        </section>
+
+        <!-- ================================
+             CONTROLES — v-model para búsqueda y filtros
+             ================================ -->
+        <section v-if="!loading && !error" class="controls-section" id="controls-section">
+            <div class="controls-wrapper">
+                <!-- Búsqueda con v-model -->
+                <div class="search-box">
+                    <input 
+                        type="text" 
+                        id="search-input"
+                        v-model="searchQuery" 
+                        placeholder="🔍 Buscar país por nombre o capital..."
+                    >
+                    <span class="search-icon"></span>
+                </div>
+
+                <!-- Filtro por región con v-model -->
+                <div class="filter-select">
+                    <select id="region-filter" v-model="selectedRegion">
+                        <option value="">🌐 Todas las regiones</option>
+                        <option 
+                            v-for="region in availableRegions" 
+                            :key="region" 
+                            :value="region"
+                        >
+                            {{ getRegionEmoji(region) }} {{ region }}
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Ordenamiento con v-model -->
+                <div class="sort-select">
+                    <select id="sort-select" v-model="sortBy">
+                        <option value="name-asc">📝 Nombre A–Z</option>
+                        <option value="name-desc">📝 Nombre Z–A</option>
+                        <option value="pop-desc">👥 Más población</option>
+                        <option value="pop-asc">👥 Menos población</option>
+                        <option value="area-desc">📐 Mayor área</option>
+                        <option value="area-asc">📐 Menor área</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================
+             INFO DE RESULTADOS
+             ================================ -->
+        <div v-if="!loading && !error && countries.length > 0" class="results-info">
+            <span class="results-count">
+                Mostrando <span>{{ filteredCountries.length }}</span> de <span>{{ totalCountries }}</span> países
+            </span>
+        </div>
+
+        <!-- ================================
+             ESTADO DE CARGA  (v-if)
+             ================================ -->
+        <div v-if="loading" class="loading-container" id="loading-state">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Cargando países del mundo...</p>
+        </div>
+
+        <!-- ================================
+             ESTADO DE ERROR  (v-if)
+             ================================ -->
+        <div v-if="error" class="error-container" id="error-state">
+            <span class="error-icon">⚠️</span>
+            <h2 class="error-title">Error al cargar datos</h2>
+            <p class="error-message">{{ error }}</p>
+            <button class="retry-btn" @click="fetchCountries">Reintentar</button>
+        </div>
+
+        <!-- ================================
+             SIN RESULTADOS  (v-if)
+             ================================ -->
+        <div v-if="!loading && !error && filteredCountries.length === 0 && countries.length > 0" class="no-results" id="no-results">
+            <span class="no-results-icon">🔍</span>
+            <h3>No se encontraron países</h3>
+            <p>Intenta con otro término de búsqueda o cambia el filtro de región.</p>
+        </div>
+
+        <!-- ================================
+             GRID DE PAÍSES  (v-for para iterar)
+             ================================ -->
+        <main v-if="!loading && !error && filteredCountries.length > 0" class="countries-grid" id="countries-grid">
+            <article 
+                v-for="(country, index) in filteredCountries" 
+                :key="country.cca2" 
+                class="country-card"
+                :style="{ animationDelay: (index % 20) * 0.05 + 's' }"
+                @click="openModal(country)"
+            >
+                <!-- Línea de color por región — v-bind con :class -->
+                <div 
+                    class="region-line" 
+                    :class="'region-' + country.region.toLowerCase()"
+                ></div>
+                
+                <div class="card-content">
+                    <!-- Bandera — v-bind con :src y :alt -->
+                    <div class="flag-container">
+                        <img 
+                            :src="country.flags.png" 
+                            :alt="'Bandera de ' + country.name.common"
+                            loading="lazy"
+                        >
+                    </div>
+                    
+                    <div class="card-info">
+                        <h2 class="country-name">{{ country.name.common }}</h2>
+                        <p class="country-official">{{ country.name.official }}</p>
+                        
+                        <div class="card-details">
+                            <div class="detail-row">
+                                <span class="detail-icon">🏛️</span>
+                                <span class="detail-label">Capital:</span>
+                                <span class="detail-value">{{ getCapital(country) }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-icon">👥</span>
+                                <span class="detail-label">Población:</span>
+                                <span class="detail-value">{{ formatNumber(country.population) }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-icon">🗣️</span>
+                                <span class="detail-label">Idioma:</span>
+                                <span class="detail-value">{{ getLanguages(country) }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Tags con v-for -->
+                        <div class="card-tags">
+                            <span class="tag tag-region">{{ country.region }}</span>
+                            <span v-if="country.subregion" class="tag tag-subregion">{{ country.subregion }}</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </main>
+
+        <!-- ================================
+             MODAL DE DETALLE  (v-if para control)
+             ================================ -->
+        <div 
+            v-if="selectedCountry" 
+            class="modal-overlay" 
+            id="country-modal"
+            @click.self="closeModal"
+        >
+            <div class="modal-content">
+                <button class="modal-close" @click="closeModal" id="modal-close-btn">✕</button>
+                
+                <!-- Bandera grande con v-bind -->
+                <div class="modal-flag">
+                    <img 
+                        :src="selectedCountry.flags.png" 
+                        :alt="'Bandera de ' + selectedCountry.name.common"
+                    >
+                </div>
+                
+                <div class="modal-body">
+                    <h2 class="modal-country-name">{{ selectedCountry.name.common }}</h2>
+                    <p class="modal-official-name">{{ selectedCountry.name.official }}</p>
+                    
+                    <div class="modal-details-grid">
+                        <div class="modal-detail-item">
+                            <span class="modal-detail-label">Capital</span>
+                            <span class="modal-detail-value">
+                                <span class="emoji">🏛️</span>{{ getCapital(selectedCountry) }}
+                            </span>
+                        </div>
+                        
+                        <div class="modal-detail-item">
+                            <span class="modal-detail-label">Población</span>
+                            <span class="modal-detail-value">
+                                <span class="emoji">👥</span>{{ formatNumber(selectedCountry.population) }}
+                            </span>
+                        </div>
+                        
+                        <div class="modal-detail-item">
+                            <span class="modal-detail-label">Región</span>
+                            <span class="modal-detail-value">
+                                <span class="emoji">{{ getRegionEmoji(selectedCountry.region) }}</span>{{ selectedCountry.region }}
+                            </span>
+                        </div>
+                        
+                        <div class="modal-detail-item">
+                            <span class="modal-detail-label">Subregión</span>
+                            <span class="modal-detail-value">
+                                <span class="emoji">📍</span>{{ selectedCountry.subregion || 'N/A' }}
+                            </span>
+                        </div>
+                        
+                        <div class="modal-detail-item">
+                            <span class="modal-detail-label">Área</span>
+                            <span class="modal-detail-value">
+                                <span class="emoji">📐</span>{{ formatNumber(selectedCountry.area) }} km²
+                            </span>
+                        </div>
+                        
+                        <div class="modal-detail-item">
+                            <span class="modal-detail-label">Moneda</span>
+                            <span class="modal-detail-value">
+                                <span class="emoji">💰</span>{{ getCurrencies(selectedCountry) }}
+                            </span>
+                        </div>
+                        
+                        <div class="modal-detail-item full-width">
+                            <span class="modal-detail-label">Idiomas</span>
+                            <span class="modal-detail-value">
+                                <span class="emoji">🗣️</span>{{ getLanguages(selectedCountry) }}
+                            </span>
+                        </div>
+                        
+                        <div class="modal-detail-item full-width">
+                            <span class="modal-detail-label">Densidad poblacional</span>
+                            <span class="modal-detail-value">
+                                <span class="emoji">📊</span>{{ getDensity(selectedCountry) }} hab/km²
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================
+             FOOTER
+             ================================ -->
+        <footer class="app-footer">
+            <p>
+                World Explorer — Desarrollado con 
+                <a href="https://vuejs.org/" target="_blank" rel="noopener">Vue 3</a> 
+                y datos de 
+                <a href="https://flagcdn.com/" target="_blank" rel="noopener">FlagCDN</a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
