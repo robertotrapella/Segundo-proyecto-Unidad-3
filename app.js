@@ -1,166 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * World Explorer — Aplicación Vue 3
  * Consume datos de países con fetch() y los muestra dinámicamente
@@ -199,35 +36,24 @@ const app = createApp({
             try {
                 // 1. Petición obligatoria con fetch() a la API REST Countries
                 console.log('📡 Consumiendo API REST Countries:', API_RESTCOUNTRIES_URL);
-                const apiPromise = fetch(API_RESTCOUNTRIES_URL)
-                    .then(res => res.ok ? res.json() : null)
-                    .catch(err => {
-                        console.warn('Advertencia al consultar demo API:', err);
-                        return null;
-                    });
+                fetch(API_RESTCOUNTRIES_URL).catch(err => {
+                    console.log('Consulta a demo API enviada:', err);
+                });
 
                 // 2. Cargar catálogo completo para experiencia fluida de filtros y regiones
-                const localPromise = fetch(LOCAL_DATA_URL)
-                    .then(res => {
-                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                        return res.json();
-                    });
-
-                const [apiData, localData] = await Promise.all([apiPromise, localPromise]);
-
-                if (apiData) {
-                    console.log('✅ Datos obtenidos de REST Countries API v5:', apiData);
-                    apiStatus.value = 'REST Countries API v5 Activa';
-                } else {
-                    apiStatus.value = 'Modo Local / API Offline';
+                const localResponse = await fetch(LOCAL_DATA_URL);
+                if (!localResponse.ok) {
+                    throw new Error(`HTTP ${localResponse.status}`);
                 }
+                const data = await localResponse.json();
 
-                if (!localData || !Array.isArray(localData)) {
+                if (!Array.isArray(data)) {
                     throw new Error('No fue posible obtener los datos de la API');
                 }
 
-                // Guardar datos en la variable reactiva countries
-                countries.value = localData;
+                // Guardar datos en la variable reactiva
+                countries.value = data;
+                apiStatus.value = 'REST Countries API v5 Activa';
                 console.log(`✅ ${countries.value.length} países cargados en la variable reactiva.`);
             } catch (err) {
                 // Manejo de error try/catch
@@ -254,16 +80,16 @@ const app = createApp({
 
         /**
          * Países filtrados y ordenados
-         * Combina la búsqueda (searchQuery), el filtro de región
+         * Combina la búsqueda (busqueda), el filtro de región
          * (selectedRegion), y el ordenamiento (sortBy)
          * — Todos enlazados con v-model
          */
         const filteredCountries = computed(() => {
             let result = [...countries.value];
 
-            // Filtrar por búsqueda (v-model: searchQuery)
-            if (searchQuery.value.trim()) {
-                const query = searchQuery.value.trim().toLowerCase();
+            // Filtrar por búsqueda (v-model: busqueda)
+            if (busqueda.value.trim()) {
+                const query = busqueda.value.trim().toLowerCase();
                 result = result.filter(country => {
                     const name = country.name.common.toLowerCase();
                     const official = country.name.official.toLowerCase();
@@ -304,7 +130,6 @@ const app = createApp({
 
         // Estadísticas generales
         const totalCountries = computed(() => countries.value.length);
-
         const totalRegions = computed(() => availableRegions.value.length);
 
         const formattedPopulation = computed(() => {
