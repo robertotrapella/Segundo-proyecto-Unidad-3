@@ -109,9 +109,12 @@ onMounted(() => {
 
 ---
 
-## 👤 Autor
+## 👥 Equipo / Integrantes
 
-- **Estudiante:** Roberto Trapella  
-- **Materia:** Programación Web / Desarrollo de Aplicaciones Web  
-- **Unidad:** Unidad 3 — Frameworks Front-End (Vue 3)  
+- **Roberto Trapella**
+- **José Jafeth González López**
+- **Humberto Fonseca Morales**
+
+- **Materia:** Programación Web / Desarrollo de Aplicaciones Front-End  
+- **Unidad:** Unidad 3 — Frameworks Front-End Reactivos (Vue 3)  
 - **Fecha:** Octubre 2026
