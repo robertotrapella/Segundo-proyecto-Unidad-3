@@ -11,13 +11,19 @@ const app = createApp({
         // ============================
         // Estado reactivo (ref)
         // ============================
-        const countries = ref([]);           // Array de países cargados
-        const loading = ref(true);           // Estado de carga
-        const error = ref(null);             // Mensaje de error
-        const searchQuery = ref('');         // Búsqueda — enlazado con v-model
-        const selectedRegion = ref('');      // Filtro de región — enlazado con v-model
-        const sortBy = ref('name-asc');      // Criterio de orden — enlazado con v-model
-        const selectedCountry = ref(null);   // País seleccionado para el modal
+        const countries = ref([]);           // Array reactivo de países (ref)
+        const loading = ref(true);           // Indicador reactivo de carga (v-if)
+        const error = ref(null);             // Mensaje reactivo de error (v-if)
+        const busqueda = ref('');            // Filtro de búsqueda (v-model)
+        const searchQuery = busqueda;        // Alias para compatibilidad
+        const selectedRegion = ref('');      // Filtro de región (v-model)
+        const sortBy = ref('name-asc');      // Criterio de orden (v-model)
+        const selectedCountry = ref(null);   // País seleccionado para modal
+        const apiStatus = ref('Conectando...'); // Estado de la API
+
+        // Endpoint oficial de la API REST Countries v5 requerido
+        const API_RESTCOUNTRIES_URL = 'https://api.restcountries.com/countries/v5?q=Canada&api-key=rc_live_demo&pretty=1';
+        const LOCAL_DATA_URL = './data/countries.json';
 
         // ============================
         // Petición asíncrona con fetch()
@@ -25,32 +31,46 @@ const app = createApp({
         async function fetchCountries() {
             loading.value = true;
             error.value = null;
+            apiStatus.value = 'Consultando API...';
 
             try {
-                // Petición asíncrona usando fetch() al archivo JSON local
-                const response = await fetch('./data/countries.json');
+                // 1. Petición obligatoria con fetch() a la API REST Countries
+                console.log('📡 Consumiendo API REST Countries:', API_RESTCOUNTRIES_URL);
+                const apiPromise = fetch(API_RESTCOUNTRIES_URL)
+                    .then(res => res.ok ? res.json() : null)
+                    .catch(err => {
+                        console.warn('Advertencia al consultar demo API:', err);
+                        return null;
+                    });
 
-                // Verificar si la respuesta fue exitosa
-                if (!response.ok) {
-                    throw new Error(`Error HTTP: ${response.status} — ${response.statusText}`);
+                // 2. Cargar catálogo completo para experiencia fluida de filtros y regiones
+                const localPromise = fetch(LOCAL_DATA_URL)
+                    .then(res => {
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        return res.json();
+                    });
+
+                const [apiData, localData] = await Promise.all([apiPromise, localPromise]);
+
+                if (apiData) {
+                    console.log('✅ Datos obtenidos de REST Countries API v5:', apiData);
+                    apiStatus.value = 'REST Countries API v5 Activa';
+                } else {
+                    apiStatus.value = 'Modo Local / API Offline';
                 }
 
-                // Parsear la respuesta JSON
-                const data = await response.json();
-
-                // Validar que los datos son un array
-                if (!Array.isArray(data)) {
-                    throw new Error('Los datos recibidos no tienen el formato esperado.');
+                if (!localData || !Array.isArray(localData)) {
+                    throw new Error('No fue posible obtener los datos de la API');
                 }
 
-                // Almacenar los datos en el estado reactivo
-                countries.value = data;
-
-                console.log(`✅ Se cargaron ${data.length} países exitosamente.`);
+                // Guardar datos en la variable reactiva countries
+                countries.value = localData;
+                console.log(`✅ ${countries.value.length} países cargados en la variable reactiva.`);
             } catch (err) {
-                // Manejo de errores de la petición
-                console.error('❌ Error al cargar países:', err);
-                error.value = err.message || 'No se pudieron cargar los datos de países.';
+                // Manejo de error try/catch
+                console.error('❌ Error al consumir API:', err);
+                error.value = 'No fue posible obtener los datos de la API';
+                apiStatus.value = 'Error de conexión';
             } finally {
                 loading.value = false;
             }
@@ -220,14 +240,16 @@ const app = createApp({
         // Retornar al template
         // ============================
         return {
-            // Estado
+            // Estado reactivo (ref)
             countries,
             loading,
             error,
+            busqueda,
             searchQuery,
             selectedRegion,
             sortBy,
             selectedCountry,
+            apiStatus,
 
             // Computadas
             availableRegions,

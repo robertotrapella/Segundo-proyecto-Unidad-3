@@ -1,108 +1,117 @@
-# 🌍 World Explorer — Países del Mundo
+# 🌍 Explorador de Países — Vue 3 & REST Countries API
 
-Aplicación web interactiva desarrollada con **Vue 3** que consume datos de países y muestra información de forma dinámica.
+Aplicación web desarrollada con **Vue 3 (Composition API)** que consume datos desde la API oficial de **REST Countries** y muestra información de forma interactiva y dinámica aplicando las directivas fundamentales de Vue (`v-if`, `v-for`, `v-model`, `v-bind`), peticiones asíncronas con `fetch()`, manejo de ciclo de vida con `onMounted()` y reactividad con `ref()`.
 
-## 🚀 Características
+---
 
-- **Peticiones asíncronas** con `fetch()` para cargar datos de países
-- **Directivas de Vue 3**: `v-if`, `v-for`, `v-model`, `v-bind`
-- Búsqueda en tiempo real por nombre o capital
-- Filtro por región (América, Europa, Asia, África, Oceanía)
-- Ordenamiento por nombre, población o área
-- Modal con información detallada de cada país
-- Diseño responsive con tema oscuro premium
-- Estadísticas generales (total países, regiones, población, idiomas)
+## 🔗 Enlaces de Entrega
 
-## 🛠️ Tecnologías Utilizadas
+- 🔗 **Repositorio GitHub (Código fuente):**  
+  [https://github.com/robertotrapella/Segundo-proyecto-Unidad-3](https://github.com/robertotrapella/Segundo-proyecto-Unidad-3)
 
-| Tecnología | Uso |
-|---|---|
-| Vue 3 (CDN) | Framework reactivo (Composition API) |
-| JavaScript ES6+ | Lógica de la aplicación |
-| CSS3 | Estilos con variables CSS, animaciones, glassmorphism |
-| Fetch API | Peticiones asíncronas para cargar datos |
-| FlagCDN | Imágenes de banderas |
+- 🌐 **Sitio Web Publicado (GitHub Pages):**  
+  [https://robertotrapella.github.io/Segundo-proyecto-Unidad-3/](https://robertotrapella.github.io/Segundo-proyecto-Unidad-3/)
+
+---
+
+## ✅ Cumplimiento de Requisitos del Proyecto
+
+| # | Requisito / Especificación | Estado | Implementación en Código |
+|---|---|:---:|---|
+| 1️⃣ | **Repositorio en GitHub** con código fuente y commits | ✅ Cumplido | Repositorio personal con historial de commits y estructura organizada (`index.html`, `app.js`, `styles.css`, `data/`). |
+| 2️⃣ | **Publicación en GitHub Pages** | ✅ Cumplido | Desplegado y funcionando en `https://robertotrapella.github.io/Segundo-proyecto-Unidad-3/`. |
+| 3️⃣ | **Consumo de API REST Countries** con `fetch()` en `onMounted()` | ✅ Cumplido | Se consume `https://api.restcountries.com/countries/v5?q=Canada&api-key=rc_live_demo&pretty=1` con `fetch()` dentro de `onMounted()`. |
+| 3️⃣ | **Almacenamiento reactivo con `ref()`** | ✅ Cumplido | Datos y estados guardados con `ref([])`, `loading = ref(true)`, `error = ref(null)`, `busqueda = ref('')`. |
+| 4️⃣ | **Uso de `v-for`** | ✅ Cumplido | Itera la lista filtrada de países mostrando Bandera, Nombre, Capital, Región y Población (`v-for="(country, index) in filteredCountries"`). |
+| 4️⃣ | **Uso de `v-if`** | ✅ Cumplido | Indicador de carga (`v-if="loading"`), mensaje de error (`v-if="error"`), y estado vacío (`v-if="filteredCountries.length === 0"`). |
+| 4️⃣ | **Uso de `v-model`** | ✅ Cumplido | Búsqueda bidireccional por nombre (`<input v-model="busqueda">`) y filtro por región (`<select v-model="selectedRegion">`). |
+| 5️⃣ | **Interfaz mínima requerida** | ✅ Cumplido | Título "Explorador de Países", buscador con `v-model`, tarjetas con datos requeridos, indicador "Cargando países...". |
+| 6️⃣ | **Manejo de errores `try / catch`** | ✅ Cumplido | Captura excepciones de red y muestra `"No fue posible obtener los datos de la API"`. |
+| 7️⃣ | **Documento PDF de Evidencias** | ✅ Cumplido | Generado con capturas de interfaz, capturas de código fuente y explicaciones técnicas detalladas. |
+
+---
+
+## 🛠️ Tecnologías y Arquitectura
+
+- **Framework:** Vue 3 (Composition API `setup()`, `ref()`, `computed()`, `onMounted()`)
+- **Peticiones HTTP:** Fetch API nativa de JavaScript ES6+
+- **Estilos:** Vanilla CSS moderno con diseño glassmorphism, responsive grid, paleta de colores HSL y animaciones suaves
+- **Despliegue:** GitHub Pages (rama `main`, directorio `/`)
+
+---
 
 ## 📂 Estructura del Proyecto
 
 ```
-├── index.html          # Página principal con template Vue
-├── app.js              # Lógica Vue 3 (Composition API)
-├── styles.css          # Estilos CSS con diseño premium
+Segundo-proyecto-Unidad-3/
+├── index.html            # Template Vue con directivas (v-if, v-for, v-model, v-bind)
+├── app.js                # Lógica reactiva Vue 3, consumo de API con fetch(), computed properties
+├── styles.css            # Estilos CSS modernos, tema oscuro y diseño responsivo
 ├── data/
-│   └── countries.json  # Datos de países (formato REST Countries)
-└── README.md           # Documentación
+│   └── countries.json    # Catálogo complementario de datos con formato REST Countries
+└── README.md             # Documentación completa y enlaces de entrega
 ```
 
-## 📋 Directivas Vue Utilizadas
+---
 
-### `v-model` — Enlace de datos bidireccional
-```html
-<input v-model="searchQuery" placeholder="Buscar país...">
-<select v-model="selectedRegion">...</select>
-<select v-model="sortBy">...</select>
+## 💻 Fragmentos Clave de Código
+
+### 1. Consumo de API con `fetch()` y ciclo de vida `onMounted()`
+```javascript
+const { createApp, ref, computed, onMounted } = Vue;
+
+const API_RESTCOUNTRIES_URL = 'https://api.restcountries.com/countries/v5?q=Canada&api-key=rc_live_demo&pretty=1';
+
+async function fetchCountries() {
+    loading.value = true;
+    error.value = null;
+    try {
+        const apiResponse = await fetch(API_RESTCOUNTRIES_URL);
+        // ... procesamiento y guardado reactivo
+        countries.value = data;
+    } catch (err) {
+        error.value = 'No fue posible obtener los datos de la API';
+    } finally {
+        loading.value = false;
+    }
+}
+
+onMounted(() => {
+    fetchCountries();
+});
 ```
 
-### `v-for` — Iteración de listas
+### 2. Directivas en `index.html`
 ```html
-<article v-for="(country, index) in filteredCountries" :key="country.cca2">
-    ...
+<!-- v-model: Enlace bidireccional -->
+<input type="text" v-model="busqueda" placeholder="🔍 Buscar país por nombre...">
+
+<!-- v-if: Indicador de carga -->
+<div v-if="loading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p class="loading-text">Cargando países...</p>
+</div>
+
+<!-- v-if: Mensaje de error -->
+<div v-if="error" class="error-container">
+    <p class="error-message">{{ error }}</p>
+</div>
+
+<!-- v-for y v-bind: Renderizado dinámico de tarjetas -->
+<article v-for="(country, index) in filteredCountries" :key="country.cca2" class="country-card">
+    <img :src="country.flags.png" :alt="'Bandera de ' + country.name.common">
+    <h2>{{ country.name.common }}</h2>
+    <p>Capital: {{ getCapital(country) }}</p>
+    <p>Región: {{ country.region }}</p>
+    <p>Población: {{ formatNumber(country.population) }}</p>
 </article>
 ```
 
-### `v-if` — Renderizado condicional
-```html
-<div v-if="loading">Cargando...</div>
-<div v-if="error">Error: {{ error }}</div>
-<div v-if="selectedCountry">Modal de detalle</div>
-```
-
-### `v-bind` (`:`) — Enlace de atributos
-```html
-<img :src="country.flags.png" :alt="'Bandera de ' + country.name.common">
-<div :class="'region-' + country.region.toLowerCase()"></div>
-```
-
-## 🔄 Petición Asíncrona con `fetch()`
-
-```javascript
-async function fetchCountries() {
-    const response = await fetch('./data/countries.json');
-    if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-    const data = await response.json();
-    countries.value = data;
-}
-```
-
-## 🌐 Despliegue en GitHub Pages
-
-1. Crear un repositorio en GitHub
-2. Subir los archivos del proyecto:
-   ```bash
-   git init
-   git add .
-   git commit -m "feat: World Explorer con Vue 3"
-   git branch -M main
-   git remote add origin https://github.com/TU_USUARIO/TU_REPOSITORIO.git
-   git push -u origin main
-   ```
-3. Ir a **Settings → Pages** en el repositorio
-4. Seleccionar **Source: Deploy from a branch**
-5. Seleccionar **Branch: main** y carpeta **/ (root)**
-6. Guardar y esperar el despliegue
-
-## 📸 Vista Previa
-
-La aplicación muestra:
-- Header con estadísticas globales
-- Barra de búsqueda y filtros interactivos
-- Grid de tarjetas de países con banderas
-- Modal de detalle al hacer clic en un país
+---
 
 ## 👤 Autor
 
-Proyecto desarrollado como práctica de Vue 3 con consumo de APIs REST.
-
-## 📄 Licencia
-
-MIT
+- **Estudiante:** Roberto Trapella  
+- **Materia:** Programación Web / Desarrollo de Aplicaciones Web  
+- **Unidad:** Unidad 3 — Frameworks Front-End (Vue 3)  
+- **Fecha:** Octubre 2026

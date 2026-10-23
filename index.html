@@ -16,8 +16,12 @@
              ================================ -->
         <header class="app-header">
             <div class="header-icon">🌍</div>
-            <h1 class="app-title">World Explorer</h1>
-            <p class="app-subtitle">Descubre información detallada sobre los países del mundo</p>
+            <h1 class="app-title">Explorador de Países</h1>
+            <p class="app-subtitle">Consulta información de países del mundo en tiempo real con Vue 3 y REST Countries API</p>
+            <div class="api-badge">
+                <span class="badge-dot"></span>
+                <span>{{ apiStatus }}</span>
+            </div>
         </header>
 
         <!-- ================================
@@ -52,8 +56,8 @@
                     <input 
                         type="text" 
                         id="search-input"
-                        v-model="searchQuery" 
-                        placeholder="🔍 Buscar país por nombre o capital..."
+                        v-model="busqueda" 
+                        placeholder="🔍 Buscar país por nombre..."
                     >
                     <span class="search-icon"></span>
                 </div>
@@ -100,7 +104,7 @@
              ================================ -->
         <div v-if="loading" class="loading-container" id="loading-state">
             <div class="loading-spinner"></div>
-            <p class="loading-text">Cargando países del mundo...</p>
+            <p class="loading-text">Cargando países...</p>
         </div>
 
         <!-- ================================
